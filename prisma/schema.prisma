@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  username      String       @unique
+  passwordHash  String
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  jerseys       Jersey[]
+  collections   Collection[]
+  
+  @@index([email])
+  @@index([username])
+}
+
+model Jersey {
+  id           String      @id @default(cuid())
+  team         String
+  season       String
+  player       String?
+  number       String?
+  size         String
+  condition    String
+  image        String
+  notes        String?
+  price        Float?
+  purchaseDate DateTime?
+  isPublic     Boolean     @default(false)
+  
+  // Make these optional for now
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([team])
+  @@index([season])
+  @@index([isPublic])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  jerseys     Jersey[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
