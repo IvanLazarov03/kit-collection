@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import cloudinary from "@/lib/cloudinary";
+import { revalidatePath } from "next/cache";
 
 // POST — Create new jersey with image upload
 export async function POST(request: NextRequest) {
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
         image: uploadResult.secure_url, // ✅ Cloudinary image URL
       },
     });
+    revalidatePath("/collection");
 
     return NextResponse.json({ success: true, data: jersey });
   } catch (error) {
