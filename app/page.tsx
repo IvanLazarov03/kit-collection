@@ -64,7 +64,7 @@ export default function Home() {
                 sizes="100vw"
                 className="object-cover"
                 priority={index === 0}
-                quality={85}
+                quality={75}
               />
             </div>
           ))}
