@@ -24,6 +24,7 @@ export default async function Collection() {
             {jerseys.map((jersey) => (
               <JerseyCard
                 key={jersey.id}
+                id={jersey.id}
                 team={jersey.team}
                 season={jersey.season}
                 image={jersey.image}
