@@ -22,7 +22,10 @@ export async function POST(request: NextRequest) {
       cloudinary.uploader
         .upload_stream(
           {
-            folder: "jerseys", // optional Cloudinary folder
+            folder: "jerseys",
+            transformation: [
+              { width: 1000, height: 1000, crop: "limit", quality: "auto" },
+            ],
           },
           (error, result) => {
             if (error) reject(error);
@@ -32,19 +35,33 @@ export async function POST(request: NextRequest) {
         .end(buffer);
     });
 
+    // Validate required fields
+    const team = formData.get("team") as string;
+    const season = formData.get("season") as string;
+    const size = formData.get("size") as string;
+    const condition = formData.get("condition") as string;
+
+    if (!team || !season || !size || !condition) {
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
+
     // Save jersey data to database
     const jersey = await prisma.jersey.create({
       data: {
-        team: formData.get("team") as string,
-        season: formData.get("season") as string,
+        team,
+        season,
         player: (formData.get("player") as string) || null,
         number: (formData.get("number") as string) || null,
-        size: formData.get("size") as string,
-        condition: formData.get("condition") as string,
+        size,
+        condition,
         notes: (formData.get("notes") as string) || null,
-        image: uploadResult.secure_url, // ✅ Cloudinary image URL
+        image: uploadResult.secure_url,
       },
     });
+
     revalidatePath("/collection");
 
     return NextResponse.json({ success: true, data: jersey });

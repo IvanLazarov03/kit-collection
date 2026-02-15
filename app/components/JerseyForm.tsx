@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -18,16 +18,75 @@ export default function JerseyForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Detect if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+    };
+    checkMobile();
+  }, []);
+
+  // Handle paste event (works on both mobile and desktop)
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Only handle paste if we're on the form
+      if (!formRef.current?.contains(e.target as Node)) return;
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        // Handle pasted image file
+        if (item.type.indexOf("image") !== -1) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) {
+            handleImageFile(file);
+          }
+          return;
+        }
+      }
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, []);
+
+  // Handle file selection
+  const handleImageFile = (file: File) => {
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      handleImageFile(file);
+    }
+  };
+
+  // Clear image
+  const clearImage = () => {
+    setImagePreview(null);
+    setImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
     }
   };
 
@@ -37,9 +96,12 @@ export default function JerseyForm() {
 
     try {
       const formDataToSend = new FormData();
+
       if (imageFile) {
         formDataToSend.append("image", imageFile);
       }
+
+      // Add other form data
       Object.entries(formData).forEach(([key, value]) => {
         formDataToSend.append(key, value);
       });
@@ -52,7 +114,8 @@ export default function JerseyForm() {
       if (response.ok) {
         router.push("/collection");
       } else {
-        alert("Failed to add jersey");
+        const error = await response.json();
+        alert(error.error || "Failed to add jersey");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -63,34 +126,119 @@ export default function JerseyForm() {
   };
 
   return (
-    <div className=" py-20 ">
+    <div className="py-20" ref={formRef}>
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-        {/* Image Upload */}
+        {/* Image Upload Section */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Jersey Photo *
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-lg file:border-0
-            file:text-sm file:font-semibold
-            file:bg-black file:text-white
-            hover:file:bg-gray-800
-            file:cursor-pointer cursor-pointer"
-            required
-          />
-          {imagePreview && (
-            <div className="mt-4 relative h-64 w-full border rounded-lg overflow-hidden">
-              <Image
-                src={imagePreview}
-                alt="Preview"
-                fill
-                className="object-contain"
-              />
+
+          {!imagePreview ? (
+            <div className="space-y-3">
+              {isMobile ? (
+                // Mobile: Show Gallery and Camera buttons
+                <>
+                  {/* Gallery Button */}
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label
+                      htmlFor="file-upload"
+                      className="block w-full text-center px-4 py-3 bg-black text-white rounded-lg cursor-pointer hover:bg-gray-800 transition"
+                    >
+                      📁 Choose from Gallery
+                    </label>
+                  </div>
+
+                  {/* Camera Button */}
+                  <div>
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="camera-upload"
+                    />
+                    <label
+                      htmlFor="camera-upload"
+                      className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition"
+                    >
+                      📷 Take Photo
+                    </label>
+                  </div>
+                </>
+              ) : (
+                // Desktop: Show single file upload button
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-black file:text-white
+                    hover:file:bg-gray-800
+                    file:cursor-pointer cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Paste Hint */}
+              {!isMobile ? (
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">
+                    Or paste an image directly (Ctrl/Cmd + V)
+                  </p>
+                </div>
+              ) : (
+                <></>
+              )}
+            </div>
+          ) : (
+            /* Image Preview */
+            <div className="space-y-3">
+              <div className="relative h-64 w-full border-2 border-gray-200 rounded-lg overflow-hidden">
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                >
+                  ✕ Remove
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isMobile) {
+                      fileInputRef.current?.click();
+                    } else {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                >
+                  🔄 Change
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -212,7 +360,7 @@ export default function JerseyForm() {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !imagePreview}
           className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Adding Jersey..." : "Add Jersey"}
