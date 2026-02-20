@@ -24,7 +24,6 @@ export default function JerseyForm() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
-  // Detect if device is mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -32,85 +31,57 @@ export default function JerseyForm() {
     checkMobile();
   }, []);
 
-  // Handle paste event (works on both mobile and desktop)
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
-      // Only handle paste if we're on the form
       if (!formRef.current?.contains(e.target as Node)) return;
-
       const items = e.clipboardData?.items;
       if (!items) return;
-
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-
-        // Handle pasted image file
         if (item.type.indexOf("image") !== -1) {
           e.preventDefault();
           const file = item.getAsFile();
-          if (file) {
-            handleImageFile(file);
-          }
+          if (file) handleImageFile(file);
           return;
         }
       }
     };
-
     document.addEventListener("paste", handlePaste);
     return () => document.removeEventListener("paste", handlePaste);
   }, []);
 
-  // Handle file selection
   const handleImageFile = (file: File) => {
     setImageFile(file);
-
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
+    reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
+    if (file) handleImageFile(file);
   };
 
-  // Clear image
   const clearImage = () => {
     setImagePreview(null);
     setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
       const formDataToSend = new FormData();
-
-      if (imageFile) {
-        formDataToSend.append("image", imageFile);
-      }
-
-      // Add other form data
-      Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value);
-      });
-
+      if (imageFile) formDataToSend.append("image", imageFile);
+      Object.entries(formData).forEach(([key, value]) =>
+        formDataToSend.append(key, value),
+      );
       const response = await fetch("/api/jerseys", {
         method: "POST",
         body: formDataToSend,
       });
-
       if (response.ok) {
         router.push("/collection");
       } else {
@@ -127,6 +98,24 @@ export default function JerseyForm() {
 
   return (
     <div className="py-20 px-10" ref={formRef}>
+      {/* Always-mounted hidden input — keeps ref valid even when preview is shown */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
+      />
+      {/* Always-mounted camera input for mobile */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleImageChange}
+        className="hidden"
+      />
+
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
         {/* Image Upload Section */}
         <div>
@@ -137,73 +126,47 @@ export default function JerseyForm() {
           {!imagePreview ? (
             <div className="space-y-3">
               {isMobile ? (
-                // Mobile: Show Gallery and Camera buttons
                 <>
                   {/* Gallery Button */}
-                  <div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="file-upload"
-                    />
-                    <label
-                      htmlFor="file-upload"
-                      className="block w-full text-center px-4 py-3 bg-black text-white rounded-lg cursor-pointer hover:bg-gray-800 transition"
-                    >
-                      Choose from Gallery
-                    </label>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="block w-full text-center px-4 py-3 bg-black text-white rounded-lg cursor-pointer hover:bg-gray-800 transition"
+                  >
+                    Choose from Gallery
+                  </button>
 
                   {/* Camera Button */}
-                  <div>
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleImageChange}
-                      className="hidden"
-                      id="camera-upload"
-                    />
-                    <label
-                      htmlFor="camera-upload"
-                      className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition"
-                    >
-                      Take Photo
-                    </label>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition"
+                  >
+                    Take Photo
+                  </button>
                 </>
               ) : (
-                // Desktop: Show single file upload button
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="block w-full text-sm text-gray-500
+                /* Desktop: visible file input */
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-gray-500
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-lg file:border-0
                     file:text-sm file:font-semibold
                     file:bg-black file:text-white
                     hover:file:bg-gray-800
                     file:cursor-pointer cursor-pointer"
-                  />
-                </div>
+                />
               )}
 
-              {/* Paste Hint */}
-              {!isMobile ? (
+              {!isMobile && (
                 <div className="text-center">
                   <p className="text-sm text-gray-500">
                     Or paste an image directly (Ctrl/Cmd + V)
                   </p>
                 </div>
-              ) : (
-                <></>
               )}
             </div>
           ) : (
@@ -223,20 +186,14 @@ export default function JerseyForm() {
                   onClick={clearImage}
                   className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
                 >
-                  ✕ Remove
+                  Remove
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isMobile) {
-                      fileInputRef.current?.click();
-                    } else {
-                      fileInputRef.current?.click();
-                    }
-                  }}
+                  onClick={() => fileInputRef.current?.click()}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
                 >
-                  🔄 Change
+                  Change
                 </button>
               </div>
             </div>
@@ -309,7 +266,7 @@ export default function JerseyForm() {
           <select
             value={formData.size}
             onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none"
             required
           >
             <option className="text-gray-700" value="">
@@ -344,7 +301,7 @@ export default function JerseyForm() {
             onChange={(e) =>
               setFormData({ ...formData, condition: e.target.value })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none"
             required
           >
             <option className="text-gray-700" value="">
@@ -376,7 +333,7 @@ export default function JerseyForm() {
               setFormData({ ...formData, notes: e.target.value })
             }
             placeholder="Any additional information..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none resize-none"
             rows={4}
           />
         </div>
