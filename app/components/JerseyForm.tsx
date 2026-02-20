@@ -126,7 +126,7 @@ export default function JerseyForm() {
   };
 
   return (
-    <div className="py-20" ref={formRef}>
+    <div className="py-20 px-10" ref={formRef}>
       <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
         {/* Image Upload Section */}
         <div>
@@ -153,7 +153,7 @@ export default function JerseyForm() {
                       htmlFor="file-upload"
                       className="block w-full text-center px-4 py-3 bg-black text-white rounded-lg cursor-pointer hover:bg-gray-800 transition"
                     >
-                      📁 Choose from Gallery
+                      Choose from Gallery
                     </label>
                   </div>
 
@@ -172,7 +172,7 @@ export default function JerseyForm() {
                       htmlFor="camera-upload"
                       className="block w-full text-center px-4 py-3 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition"
                     >
-                      📷 Take Photo
+                      Take Photo
                     </label>
                   </div>
                 </>
@@ -312,13 +312,27 @@ export default function JerseyForm() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
             required
           >
-            <option value="">Select size</option>
-            <option value="XS">XS</option>
-            <option value="S">S</option>
-            <option value="M">M</option>
-            <option value="L">L</option>
-            <option value="XL">XL</option>
-            <option value="XXL">XXL</option>
+            <option className="text-gray-700" value="">
+              Select size
+            </option>
+            <option className="text-gray-700" value="XS">
+              XS
+            </option>
+            <option className="text-gray-700" value="S">
+              S
+            </option>
+            <option className="text-gray-700" value="M">
+              M
+            </option>
+            <option className="text-gray-700" value="L">
+              L
+            </option>
+            <option className="text-gray-700" value="XL">
+              XL
+            </option>
+            <option className="text-gray-700" value="XXL">
+              XXL
+            </option>
           </select>
         </div>
 
@@ -333,11 +347,21 @@ export default function JerseyForm() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
             required
           >
-            <option value="">Select condition</option>
-            <option value="New">New</option>
-            <option value="Excellent">Excellent</option>
-            <option value="Good">Good</option>
-            <option value="Fair">Fair</option>
+            <option className="text-gray-700" value="">
+              Select condition
+            </option>
+            <option className="text-gray-700" value="New">
+              New
+            </option>
+            <option className="text-gray-700" value="Excellent">
+              Excellent
+            </option>
+            <option className="text-gray-700" value="Good">
+              Good
+            </option>
+            <option className="text-gray-700" value="Fair">
+              Fair
+            </option>
           </select>
         </div>
 
@@ -361,7 +385,7 @@ export default function JerseyForm() {
         <button
           type="submit"
           disabled={isSubmitting || !imagePreview}
-          className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full bg-green-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isSubmitting ? "Adding Jersey..." : "Add Jersey"}
         </button>
